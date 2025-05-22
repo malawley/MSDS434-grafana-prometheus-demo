@@ -28,3 +28,4 @@ Thumbs.db
 # Be careful to never commit real service keys
 *.env
 *.key.json
+hygiene-grafana-key.json

@@ -1,0 +1,4 @@
+pandas
+pika
+flask
+google-cloud-storage
