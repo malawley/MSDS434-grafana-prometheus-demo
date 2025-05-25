@@ -1,0 +1,11 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'extractor'
+    static_configs:
+      - targets: ['grafana-extractor:8000']
+
+  - job_name: 'cleaner'
+    static_configs:
+      - targets: ['grafana-cleaner:9100']

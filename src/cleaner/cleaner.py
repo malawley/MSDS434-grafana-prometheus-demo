@@ -7,6 +7,7 @@ import pika
 from google.cloud import storage
 from flask import Flask
 from threading import Thread
+from prometheus_client import start_http_server, Counter
 
 # === Config ===
 project_id = os.getenv("PROJECT_ID", "hygiene-prediction-434")
@@ -14,6 +15,9 @@ raw_bucket = os.getenv("RAW_BUCKET", "prometheus-grafana-demo-raw")
 clean_bucket = os.getenv("CLEAN_BUCKET", "prometheus-grafana-demo-clean")
 credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
 rabbit_url = os.getenv("RABBITMQ_URL", "amqp://guest:guest@localhost:5672/")
+
+# === Prometheus Metric ===
+messages_processed = Counter("cleaner_messages_total", "Total messages processed by the cleaner")
 
 # === Connect to GCS ===
 storage_client = storage.Client.from_service_account_json(credentials_path)
@@ -55,6 +59,7 @@ def callback(ch, method, properties, body):
         clean_blob.upload_from_string(df_clean.to_json(orient="records"), content_type="application/json")
 
         log(f"✅ Cleaned file written to GCS: {clean_path}")
+        messages_processed.inc()  # Prometheus metric increment
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
     except Exception as e:
@@ -75,5 +80,17 @@ def start_consumer():
         log(f"❌ Failed to start cleaner: {e}")
 
 if __name__ == "__main__":
+    # Start Prometheus /metrics server in the background with logging
+    def start_prometheus():
+        log("📊 Starting Prometheus metrics server on port 9100")
+        start_http_server(9100)
+
+    Thread(target=start_prometheus, daemon=True).start()
+
+    # Start health check server in background
     Thread(target=start_health_server, daemon=True).start()
+
+    # Start RabbitMQ consumer (this blocks)
     start_consumer()
+
+

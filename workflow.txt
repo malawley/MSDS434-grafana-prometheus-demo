@@ -1,0 +1,73 @@
+
+# Monitoring Pipeline with Prometheus and Grafana
+
+This document outlines the step-by-step process to add Prometheus instrumentation and Grafana dashboards to a containerized pipeline with an extractor and cleaner service.
+
+## Step 1: Instrument the Code
+
+- Import the Prometheus client library for your language (e.g., `prometheus_client` in Python).
+- Define application-specific metrics (e.g., counters for messages processed).
+- Increment or update metrics at key points in your code (e.g., after successful processing).
+- Expose a `/metrics` endpoint using the Prometheus HTTP server.
+
+## Step 2: Start Metrics Server Concurrently
+
+- Ensure the Prometheus HTTP metrics server runs in its own thread or goroutine.
+- Do this before starting any blocking code (like message consumers).
+- Choose a dedicated port (e.g., 9100 for the cleaner, 8001 for the extractor).
+
+## Step 3: Update Docker Configuration
+
+- Ensure the service containers are attached to the same Docker network (e.g., `pipeline-net`).
+- No need to expose metrics ports to the host unless debugging locally.
+- Confirm that each container can reach the others via service name and port.
+
+## Step 4: Configure Prometheus
+
+- Add scrape configurations in `prometheus.yml` for each instrumented service.
+- Use the container's network alias or name and the metrics port.
+- Example target: `grafana-cleaner:9100`
+
+## Step 5: Start Prometheus and Grafana
+
+- Use `docker run` or `docker compose` to launch Prometheus and Grafana containers.
+- Mount `prometheus.yml` into the Prometheus container.
+- Confirm Prometheus is accessible at http://localhost:9090
+- Confirm Grafana is accessible at http://localhost:3000
+
+## Step 6: Verify Prometheus Scraping
+
+- In Prometheus, go to Status > Targets.
+- Confirm that all defined targets (e.g., extractor, cleaner) are listed and show as UP.
+- Run sample queries like `up` or the name of your custom metric.
+
+## Step 7: Create Grafana Dashboards
+
+- In Grafana, add Prometheus as a data source.
+- Create a new dashboard and add a panel for each key metric.
+- Use `rate(metric_name[1m])` to plot changing counters as time series.
+- Save and name the dashboard for reuse.
+
+## Step 8: Debug and Tune
+
+- If "No data" appears in Grafana, check:
+  - Metric spelling
+  - Time range setting
+  - Whether the metric has been emitted yet
+- Optionally, expose the metrics port (`-p 9100:9100`) for local inspection.
+
+## Step 9: Trigger and Observe the Pipeline
+
+- Run the extractor and cleaner services to generate activity.
+- Watch Prometheus metrics and Grafana dashboards update in real time.
+
+## Step 10: Finalize and Document
+
+- Document all defined metrics and their meanings.
+- Export Grafana dashboards as JSON for reuse.
+- Add Makefile targets for:
+  - run-prometheus
+  - run-grafana
+  - run-cleaner
+  - run-extractor
+- Confirm the entire pipeline is reproducible with documented steps.

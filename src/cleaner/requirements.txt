@@ -2,3 +2,4 @@ pandas
 pika
 flask
 google-cloud-storage
+prometheus_client

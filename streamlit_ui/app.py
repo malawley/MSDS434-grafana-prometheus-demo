@@ -4,11 +4,12 @@ from google.cloud import storage
 from datetime import datetime
 
 # === Configuration ===
-EXTRACTOR_URL = "http://localhost:8000"
-CLEANER_URL = "http://localhost:8000"
+EXTRACTOR_URL = "http://grafana-extractor:8000"
+CLEANER_URL = "http://grafana-cleaner:8000"
 CHICAGO_API = "https://data.cityofchicago.org/resource/4ijn-s7e5.json?$limit=1"
-RABBITMQ_API = "http://localhost:15672/api/overview"
+RABBITMQ_API = "http://rabbit:15672/api/overview"
 RABBITMQ_AUTH = ("guest", "guest")
+
 
 RAW_BUCKET = "prometheus-grafana-demo-raw"
 CLEAN_BUCKET = "prometheus-grafana-demo-clean"
@@ -51,10 +52,12 @@ gcs_client = get_gcs_client()
 
 def check_bucket_access(bucket_name):
     try:
-        gcs_client.get_bucket(bucket_name)  # Fast metadata-only check
+        gcs_client.get_bucket(bucket_name)
         return True
-    except Exception:
+    except Exception as e:
+        st.error(f"{bucket_name}: 🔴 Not reachable or no access — {str(e)}")
         return False
+
 
 for label, bucket in {
     "Raw Data": RAW_BUCKET,
