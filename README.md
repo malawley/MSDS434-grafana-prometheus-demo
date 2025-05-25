@@ -5,71 +5,7 @@
 Chicago Food Inspections Monitoring Demo: Extract, Clean, and Observe
 
 
-## Setup Instructions
-
-These steps will clone the repository, configure the environment, and launch the full Prometheus + Grafana monitoring demo for the data pipeline.
-
-### 1. Clone the Repository
-
-```bash
-git clone https://github.com/malawley/MSDS434-grafana-prometheus-demo.git
-cd MSDS434-grafana-prometheus-demo
-```
-
-### 2. Provide GCP Credentials
-
-Create a file named `hygiene-grafana-key.json` in the project root. This should be your GCP service account key file.
-
-> **Do not commit this file to GitHub.** It is already listed in `.gitignore`.
-
-If needed, copy the example:
-```bash
-cp hygiene-grafana-key.json.example hygiene-grafana-key.json
-```
-
-### 3. Build and Run the Monitoring Stack
-
-Start Prometheus and Grafana:
-
-```bash
-make run-prometheus
-make run-grafana
-```
-
-### 4. Run the Extractor and Cleaner Services
-
-These launch your instrumented services with metrics enabled:
-
-```bash
-make run-extractor
-make run-cleaner
-```
-
-### 5. Access Web Interfaces
-
-- **Prometheus**: http://localhost:9090
-- **Grafana**: http://localhost:3000  
-  Default login: `admin / admin`
-
-### 6. View Dashboards
-
-Once inside Grafana:
-
-- Dashboards are preloaded via provisioning
-- Look for:
-  - **Cleaner Dashboard**
-  - **Extractor Dashboard**
-
-If you don’t see them, you can import manually from `grafana/dashboards/`.
-
-### 7. Trigger the Pipeline
-
-Use the Streamlit UI or trigger services to generate extractor and cleaner activity. Metrics should begin updating automatically in Prometheus and Grafana.
-
-```
-
-Let me know if you want this turned into a one-click setup script or Docker Compose bundle.
-
+Note: setup instructions for running this system are included in the appendix at the bottom of this file.
 
 ## System Architecture Overview
 
@@ -169,3 +105,160 @@ This architecture separates pipeline control from pipeline monitoring, using:
 * Prometheus and Grafana for visibility into pipeline behavior
 
 It is designed to demonstrate robust data pipeline operation, monitoring, and control in a modular and realistic setting.
+
+
+Appendix
+## Setup Instructions
+
+These steps will clone the repository, configure Google Cloud resources, and launch the full Prometheus + Grafana monitoring demo.
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/malawley/MSDS434-grafana-prometheus-demo.git
+cd MSDS434-grafana-prometheus-demo
+```
+
+---
+
+### 2. Set Up Google Cloud
+
+#### a. Create a GCP Project
+
+In the GCP Console:
+
+1. Go to https://console.cloud.google.com/
+2. Create a new project (e.g., `grafana-demo-project`)
+
+#### b. Enable APIs
+
+Enable these APIs for your project:
+- Cloud Storage API
+- IAM API
+- Service Usage API
+
+#### c. Create Two GCS Buckets
+
+Create two **regionally located** GCS buckets (replace with your names):
+
+- `your-raw-bucket`
+- `your-clean-bucket`
+
+These must be globally unique.
+
+#### d. Create a Service Account
+
+1. Go to **IAM & Admin → Service Accounts**
+2. Click **"Create Service Account"**
+3. Name it (e.g., `grafana-demo-sa`)
+4. Assign these roles:
+   - `Storage Object Admin`
+5. After creation, click the account → **Keys → Add Key → Create new key (JSON)**
+
+Download the key file and save it as:
+
+```bash
+hygiene-grafana-key.json
+```
+
+Place it in the project root. This file is **ignored by Git** for safety.
+
+---
+
+### 3. Configure the Makefile
+
+Open the `Makefile` and update these environment variable values in the following targets:
+
+- `run-extractor`
+- `run-cleaner`
+
+Set:
+
+- `PROJECT_ID` to your GCP project ID
+- `RAW_BUCKET` to your raw GCS bucket
+- `CLEAN_BUCKET` to your clean GCS bucket
+
+Example:
+
+```make
+-e PROJECT_ID=grafana-demo-project
+-e RAW_BUCKET=your-raw-bucket
+-e CLEAN_BUCKET=your-clean-bucket
+```
+
+---
+
+### 4. Build and Run Monitoring Stack
+
+```bash
+make run-prometheus
+make run-grafana
+```
+
+This will start:
+- Prometheus on http://localhost:9090
+- Grafana on http://localhost:3000
+
+Login to Grafana with:
+```
+Username: admin
+Password: admin
+```
+
+---
+
+### 5. Build and Run the Pipeline Services
+
+```bash
+make run-extractor
+make run-cleaner
+```
+
+These containers will connect to RabbitMQ and GCS and expose metrics to Prometheus.
+
+---
+
+### 6. Trigger the Pipeline
+
+Use the Streamlit UI to trigger data extraction and cleaning:
+
+```bash
+make run-streamlit
+```
+
+Then open http://localhost:8501 and run the pipeline interactively.
+
+---
+
+### 7. View Monitoring Dashboards
+
+In Grafana (http://localhost:3000):
+
+1. Dashboards are pre-provisioned
+2. Look for:
+   - "Extractor Dashboard"
+   - "Cleaner Dashboard"
+
+If not visible, import them manually from:
+```text
+grafana/dashboards/
+```
+
+---
+
+### 8. Verify System
+
+Use Prometheus to verify:
+
+- `up` — confirms services are online
+- `extractor_requests_total` — confirms extractor activity
+- `cleaner_messages_total` — confirms cleaner activity
+
+Use Grafana to monitor metrics over time.
+
+---
+
+### 9. You're Done
+
+You now have a fully functioning containerized monitoring pipeline using Prometheus and Grafana, instrumented for real-time inspection.
+
