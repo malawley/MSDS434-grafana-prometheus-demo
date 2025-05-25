@@ -4,6 +4,73 @@
 
 Chicago Food Inspections Monitoring Demo: Extract, Clean, and Observe
 
+
+## Setup Instructions
+
+These steps will clone the repository, configure the environment, and launch the full Prometheus + Grafana monitoring demo for the data pipeline.
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/malawley/MSDS434-grafana-prometheus-demo.git
+cd MSDS434-grafana-prometheus-demo
+```
+
+### 2. Provide GCP Credentials
+
+Create a file named `hygiene-grafana-key.json` in the project root. This should be your GCP service account key file.
+
+> **Do not commit this file to GitHub.** It is already listed in `.gitignore`.
+
+If needed, copy the example:
+```bash
+cp hygiene-grafana-key.json.example hygiene-grafana-key.json
+```
+
+### 3. Build and Run the Monitoring Stack
+
+Start Prometheus and Grafana:
+
+```bash
+make run-prometheus
+make run-grafana
+```
+
+### 4. Run the Extractor and Cleaner Services
+
+These launch your instrumented services with metrics enabled:
+
+```bash
+make run-extractor
+make run-cleaner
+```
+
+### 5. Access Web Interfaces
+
+- **Prometheus**: http://localhost:9090
+- **Grafana**: http://localhost:3000  
+  Default login: `admin / admin`
+
+### 6. View Dashboards
+
+Once inside Grafana:
+
+- Dashboards are preloaded via provisioning
+- Look for:
+  - **Cleaner Dashboard**
+  - **Extractor Dashboard**
+
+If you don’t see them, you can import manually from `grafana/dashboards/`.
+
+### 7. Trigger the Pipeline
+
+Use the Streamlit UI or trigger services to generate extractor and cleaner activity. Metrics should begin updating automatically in Prometheus and Grafana.
+
+```
+
+Let me know if you want this turned into a one-click setup script or Docker Compose bundle.
+
+
 ## System Architecture Overview
 
 This project implements a containerized two-stage data pipeline, monitored via Prometheus + Grafana, and controlled via a Streamlit dashboard.
